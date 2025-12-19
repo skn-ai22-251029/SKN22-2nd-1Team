@@ -45,10 +45,19 @@ DEFAULT_RANDOM_STATE = 42
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Train and save BalancedRF pipeline artifact.")
-    p.add_argument("--train", type=str, default="data/processed/train.csv", help="Path to train.csv")
-    p.add_argument("--test", type=str, default="data/processed/test.csv", help="Path to test.csv (optional for eval)")
+    
+    # script/train_balancedrf.py -> parent=script -> parent.parent=ROOT
+    root = Path(__file__).resolve().parent.parent
+    
+    default_train = root / "data" / "processed" / "train.csv"
+    default_test = root / "data" / "processed" / "test.csv"
+    # User wanted ../app/artifacts, which means ROOT/app/artifacts
+    default_out = root / "app" / "artifacts" / "best_balancedrf_pipeline.joblib"
+
+    p.add_argument("--train", type=str, default=str(default_train), help="Path to train.csv")
+    p.add_argument("--test", type=str, default=str(default_test), help="Path to test.csv (optional for eval)")
     p.add_argument("--target", type=str, default="Revenue", help="Target column name")
-    p.add_argument("--out", type=str, default="../app/artifacts/best_balancedrf_pipeline.joblib", help="Output joblib path")
+    p.add_argument("--out", type=str, default=str(default_out), help="Output joblib path")
     p.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="Decision threshold to save with model")
     p.add_argument("--random_state", type=int, default=DEFAULT_RANDOM_STATE, help="Random seed")
     p.add_argument("--no_eval", action="store_true", help="Skip evaluation even if test has label")

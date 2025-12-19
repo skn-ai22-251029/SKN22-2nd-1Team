@@ -10,8 +10,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_loss
 
-DATA_DIR = Path("data/processed")
-ART_DIR = Path("artifacts")
+# script/train.py -> parent=script -> parent.parent=ROOT
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data" / "processed"
+ART_DIR = ROOT / "artifacts"
 TARGET = "Revenue"
 SEED = 42
 

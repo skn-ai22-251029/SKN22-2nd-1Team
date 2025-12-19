@@ -4,8 +4,10 @@ from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-RAW_PATH = Path("../data/raw/online_shoppers_intention.csv")
-OUT_DIR = Path("../data/processed")
+# script/build_dataset.py -> parent=script -> parent.parent=ROOT
+ROOT = Path(__file__).resolve().parent.parent
+RAW_PATH = ROOT / "data" / "raw" / "online_shoppers_intention.csv"
+OUT_DIR = ROOT / "data" / "processed"
 TARGET = "Revenue"
 TEST_SIZE = 0.2
 SEED = 42
