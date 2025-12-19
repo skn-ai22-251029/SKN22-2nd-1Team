@@ -7,7 +7,7 @@ MAIN_SCRIPT = Path(sys.argv[0]).resolve()
 APP_DIR = MAIN_SCRIPT.parent  # .../app
 
 PAGE_MAP = {
-    "홈": "pages/00_home.py",  # 홈은 pages로 빼는 게 switch_page 안정적입니다.
+    "홈": "app.py",  # 홈은 pages로 빼는 게 switch_page 안정적입니다.
     "세션 구매 확률 계산기": "pages/01_session_prob.py",
     "What-if 시뮬레이터": "pages/02_what_if.py",
     "채널 효과 분석": "pages/03_channel_effect.py",
