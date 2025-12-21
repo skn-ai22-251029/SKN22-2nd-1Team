@@ -1,11 +1,11 @@
 # app/app.py
 import streamlit as st
-from ui.header import render_header
 
-render_header()
+# Streamlit 페이지 설정은 반드시 switch_page 이전
+st.set_page_config(
+    page_title="🚀SkN22-2nd-1Team",
+    layout="wide"
+)
 
-st.set_page_config(page_title="My Streamlit App", layout="wide")
-
-
-st.title("홈")
-st.write("여기가 홈 페이지입니다.")
+# 앱 실행 시 홈 페이지로 즉시 이동
+st.switch_page("pages/00_home.py")
