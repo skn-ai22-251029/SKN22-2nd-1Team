@@ -1,34 +1,30 @@
 # app/pages/02_what_if.py
+
+import sys, os
+
+# pages → app
+APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
+
 import streamlit as st
 from ui.header import render_header
 
 render_header()
-
 st.set_page_config(page_title="What-if 시뮬레이터", layout="wide")
 
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-import streamlit as st
 import pandas as pd
 import joblib
 import altair as alt
 import numpy as np
 
 # -------------------------------
-# 0. 경로 고정
+# 데이터 / 모델 경로
 # -------------------------------
-import os
-
-# 현재 파일 위치: app/pages/02_what_if.py
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))  # pages → app → 2nd
+BASE_DIR = os.path.abspath(os.path.join(APP_DIR, ".."))  # app → 2nd
 TRAIN_PATH = os.path.join(BASE_DIR, "data/processed/train.csv")
 TEST_PATH = os.path.join(BASE_DIR, "data/processed/test.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "app/artifacts/best_balancedrf_pipeline.joblib")
-
 
 # -------------------------------
 # 1. 데이터 / 모델 로드
@@ -93,81 +89,89 @@ direction_hint = {
 pagevalues_max = X_train["PageValues"].max()
 
 # ===============================
-# What-if 시뮬레이터
+# What-if 시뮬레이터 (좌우 배치)
 # ===============================
-st.caption("드래그를 통해 개별 행동 지표를 조정하여 구매 확률 변화 확인")
+col_left, col_right = st.columns(2)
 
 slider_values = {}
 target_cols = list(indicator_desc.keys())
 
-for col in target_cols:
-    min_val = float(X_train[col].min())
-    max_val = float(X_train[col].max())
-    default_val = float(X_sample[col].iloc[0])
-    if min_val == max_val:
-        max_val = min_val + 1e-6
+# 좌측: 입력 슬라이더
+with col_left:
+    st.caption("드래그를 통해 개별 행동 지표를 조정하여 구매 확률 변화 확인")
+    for col in target_cols:
+        min_val = float(X_train[col].min())
+        max_val = float(X_train[col].max())
+        default_val = float(X_sample[col].iloc[0])
+        if min_val == max_val:
+            max_val = min_val + 1e-6
 
-    if col == "PageValues":
-        # PageValues는 0~100%로 변환
-        min_val_pct = 0.0
-        max_val_pct = 100.0
-        default_val_pct = default_val / pagevalues_max * 100
-        st.markdown(f"**{col}**  \n{indicator_desc[col]} (0% ~ 100%)")
-        slider_values[col] = st.slider(
-            label="",
-            min_value=min_val_pct,
-            max_value=max_val_pct,
-            value=default_val_pct,
-            key=f"slider_{col}",
-        )
-        # 실제 모델 입력값으로 환산
-        slider_values[col] = slider_values[col] / 100 * pagevalues_max
-    else:
-        unit_label = " (초)" if "Duration" in col else ""
-        st.markdown(f"**{col}**  \n{indicator_desc[col]}{unit_label}")
-        slider_values[col] = st.slider(
-            label="",
-            min_value=min_val,
-            max_value=max_val,
-            value=default_val,
-            key=f"slider_{col}",
-        )
+        if col == "PageValues":
+            # PageValues는 0~100%로 변환
+            min_val_pct = 0.0
+            max_val_pct = 100.0
+            default_val_pct = default_val / pagevalues_max * 100
+            st.markdown(f"**{col}**  \n{indicator_desc[col]} (0% ~ 100%)")
+            slider_values[col] = st.slider(
+                label="",
+                min_value=min_val_pct,
+                max_value=max_val_pct,
+                value=default_val_pct,
+                key=f"slider_{col}",
+            )
+            # 실제 모델 입력값으로 환산
+            slider_values[col] = slider_values[col] / 100 * pagevalues_max
+        else:
+            unit_label = " (초)" if "Duration" in col else ""
+            st.markdown(f"**{col}**  \n{indicator_desc[col]}{unit_label}")
+            slider_values[col] = st.slider(
+                label="",
+                min_value=min_val,
+                max_value=max_val,
+                value=default_val,
+                key=f"slider_{col}",
+            )
 
-X_input = X_sample.copy()
-for col in target_cols:
-    X_input[col] = slider_values[col] * feature_weights[col]
+# 우측: 출력
+with col_right:
+    X_input = X_sample.copy()
+    for col in target_cols:
+        X_input[col] = slider_values[col] * feature_weights[col]
 
-prob = pipeline.predict_proba(X_input)[:, 1][0]
-decision = "구매 판단 영역" if prob >= best_threshold else "비구매 판단 영역"
+    prob = pipeline.predict_proba(X_input)[:, 1][0]
+    decision = "구매 판단 영역" if prob >= best_threshold else "비구매 판단 영역"
 
-st.write(f"예측 구매 확률: {prob:.2%}")
-st.write(f"판단 기준({best_threshold:.2%}) 대비 결과: {decision}")
+    st.write(f"예측 구매 확률: {prob:.2%}")
+    st.write(f"결정 기준값({best_threshold:.2%}) 대비 결과: {decision}")
 
-data_prob = pd.DataFrame(
-    {
-        "category": ["구매확률", "판단기준"],
-        "value": [prob, best_threshold],
-        "color": ["red", "blue"],  # 색상 지정
-    }
-)
-
-chart_prob = (
-    alt.Chart(data_prob)
-    .mark_bar()
-    .encode(
-        x=alt.X("category:N", axis=alt.Axis(labelAngle=0)),
-        y="value:Q",
-        color=alt.Color("color:N", scale=None)  # 지정한 색상 그대로 적용
+    data_prob = pd.DataFrame(
+        {
+            "category": ["구매확률", "결정 기준값"],
+            "value": [prob, best_threshold],
+            "color": ["red", "blue"],  # 색상 지정
+        }
     )
-)
 
-st.altair_chart(chart_prob, use_container_width=True)
+    chart_prob = (
+        alt.Chart(data_prob)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "category:N",
+                sort=["구매확률", "결정 기준값"],  # 항상 결정 기준값을 우측에 표시
+                axis=alt.Axis(labelAngle=0)
+            ),
+            y=alt.Y("value:Q", scale=alt.Scale(domain=[0.0, 1.0])),  # y축 0~1 고정
+            color=alt.Color("color:N", scale=None)
+        )
+    )
 
-# Threshold 대비 차이 계산
-threshold_diff = prob - best_threshold
-threshold_pct = threshold_diff / best_threshold * 100
+    st.altair_chart(chart_prob, use_container_width=True)
 
-if prob >= best_threshold:
-    st.write(f"현재 행동 조합은 Threshold보다 {threshold_pct:.2f}% 높아 구매 가능성이 충분함")
-else:
-    st.write(f"현재 행동 조합은 Threshold보다 {abs(threshold_pct):.2f}% 낮아 구매 가능성 부족")
+    threshold_diff = prob - best_threshold
+    threshold_pct = threshold_diff / best_threshold * 100
+
+    if prob >= best_threshold:
+        st.write(f"현재 행동 조합은 기준값(Threshold)보다 {threshold_pct:.2f}% 높아 구매 가능성이 충분함")
+    else:
+        st.write(f"현재 행동 조합은 기준값(Threshold)보다 {abs(threshold_pct):.2f}% 낮아 구매 가능성 부족")
