@@ -142,7 +142,7 @@ with col_right:
     decision = "구매 판단 영역" if prob >= best_threshold else "비구매 판단 영역"
 
     st.write(f"예측 구매 확률: {prob:.2%}")
-    st.write(f"판단 기준({best_threshold:.2%}) 대비 결과: {decision}")
+    st.write(f"결정 기준값({best_threshold:.2%}) 대비 결과: {decision}")
 
     data_prob = pd.DataFrame(
         {
@@ -156,9 +156,13 @@ with col_right:
         alt.Chart(data_prob)
         .mark_bar()
         .encode(
-            x=alt.X("category:N", axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("value:Q", scale=alt.Scale(domain=[0.0, 1.0])),
-            color=alt.Color("color:N", scale=None)  # 지정한 색상 그대로 적용
+            x=alt.X(
+                "category:N",
+                sort=["구매확률", "결정 기준값"],  # 항상 결정 기준값을 우측에 표시
+                axis=alt.Axis(labelAngle=0)
+            ),
+            y=alt.Y("value:Q", scale=alt.Scale(domain=[0.0, 1.0])),  # y축 0~1 고정
+            color=alt.Color("color:N", scale=None)
         )
     )
 
