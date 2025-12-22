@@ -33,6 +33,8 @@
 ## 📂 Data Dictionary
 본 프로젝트는 UCI Machine Learning Repository의 **Online Shoppers Purchasing Intention Dataset**을 사용합니다.
 
+https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset
+
 사용자의 세션 행동, 페이지 체류 시간, 이탈률 등을 분석하여 **구매 여부(`Revenue`)** 를 예측합니다.
 
 | 구분 | 컬럼명 (Feature) | 설명 | 데이터 타입 | 비고 |
